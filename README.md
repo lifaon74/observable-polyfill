@@ -3,18 +3,20 @@
 ![NPM](https://img.shields.io/npm/l/observable-polyfill.svg)
 ![npm type definitions](https://img.shields.io/npm/types/observable-polyfill.svg)
 
-## observable-polyfill
+## wigc-observable-polyfill
 
+Implementation of the [WIGC Observable](https://wicg.github.io/observable/).
 
+Compliant with the spec until 2025-03-17.
 
 ## 📦 Installation
 
 ```shell
-yarn add observable-polyfill
+yarn add wigc-observable-polyfill
 # or
-npm install observable-polyfill --save
+npm install wigc-observable-polyfill --save
 ```
 
 ## 📜 Documentation
 
-TODO
+
