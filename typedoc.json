@@ -1,0 +1,12 @@
+{
+  "entryPoints": ["src/**/*.ts"],
+  "compilerOptions": {
+    "skipLibCheck": true
+  },
+  "outputs": [
+    {
+      "name": "html",
+      "path": "./docs"
+    }
+  ]
+}
