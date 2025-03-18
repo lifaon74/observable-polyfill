@@ -61,7 +61,8 @@ The WIGC documentation may be found here: https://wicg.github.io/observable/.
 - `wigc-observable-polyfill` exports: `Observable`, `Subscriber`, and `when`
 - `wigc-observable-polyfill/protected` export the function `polyfill`
   - when called, it exposes `Observable` and `Subscriber` into `globalThis`, and adds the `when` method to `EventTarget`
-  - 
+  
+
 ## Example
 
 ### Drag event
