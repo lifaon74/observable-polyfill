@@ -607,12 +607,112 @@ export class Observable<GValue> {
     });
   }
 
-  // TODO
-  // inspect<GNewValue>(
-  //   inspectorOrNext: ObservableInspector<GValue> | SubscriptionObserver<GValue>,
-  // ): Observable<GNewValue> {
-  //   throw 'TODO';
-  // }
+  inspect(
+    inspectorOrNext: ObservableNextCallback<GValue> | ObservableInspector<GValue>,
+  ): Observable<GValue> {
+    let subscribe: VoidFunction | undefined;
+    let next: ObservableNextCallback<GValue> | undefined;
+    let error: ObservableErrorCallback | undefined;
+    let complete: ObservableCompleteCallback | undefined;
+    let abort: ObservableInspectorAbortHandler | undefined;
+
+    if (typeof inspectorOrNext === 'function') {
+      next = inspectorOrNext;
+    } else {
+      subscribe = inspectorOrNext.subscribe;
+      next = inspectorOrNext.next;
+      error = inspectorOrNext.error;
+      complete = inspectorOrNext.complete;
+      abort = inspectorOrNext.abort;
+    }
+
+    return new Observable<GValue>((subscriber: Subscriber<GValue>): void => {
+      if (subscribe !== undefined) {
+        try {
+          subscribe();
+        } catch (error: unknown) {
+          subscriber.error(error);
+          return;
+        }
+      }
+
+      let removeAbortListener: VoidFunction | undefined;
+
+      if (abort !== undefined) {
+        const onAbort = (): void => {
+          try {
+            abort(subscriber.signal.reason);
+          } catch (error: unknown) {
+            reportError(error);
+          }
+        };
+
+        subscriber.signal.addEventListener('abort', onAbort);
+
+        removeAbortListener = (): void => {
+          subscriber.signal.removeEventListener('abort', onAbort);
+        };
+      }
+
+      this.subscribe(
+        createInternalObserver<GValue>({
+          next: (value: GValue): void => {
+            if (next !== undefined) {
+              try {
+                next(value);
+              } catch (error: unknown) {
+                if (removeAbortListener !== undefined) {
+                  removeAbortListener();
+                  removeAbortListener = undefined;
+                }
+                subscriber.error(error);
+                return;
+              }
+            }
+
+            subscriber.next(value);
+          },
+          error: (observableError: unknown): void => {
+            if (removeAbortListener !== undefined) {
+              removeAbortListener();
+              removeAbortListener = undefined;
+            }
+
+            if (error !== undefined) {
+              try {
+                error(observableError);
+              } catch (throwError: unknown) {
+                subscriber.error(throwError);
+                return;
+              }
+            }
+
+            subscriber.error(observableError);
+          },
+          complete: (): void => {
+            if (removeAbortListener !== undefined) {
+              removeAbortListener();
+              removeAbortListener = undefined;
+            }
+
+            if (complete !== undefined) {
+              try {
+                complete();
+              } catch (error: unknown) {
+                subscriber.error(error);
+                return;
+              }
+            }
+
+            subscriber.complete();
+          },
+        }),
+        {
+          signal: subscriber.signal,
+        },
+      );
+    });
+  }
 
   catch<GNewValue>(callback: CatchCallback<GNewValue>): Observable<GValue | GNewValue> {
     return new Observable<GValue | GNewValue>(
@@ -704,15 +804,120 @@ export class Observable<GValue> {
     );
   }
 
-  // TODO
-  // forEach(callback: Visitor<GValue>, options: SubscribeOptions = {}): Promise<void> {
-  //   throw 'TODO';
-  // }
+  forEach(callback: Visitor<GValue>, options: SubscribeOptions = {}): Promise<void> {
+    return new Promise<void>((resolve: () => void, reject: (reason?: any) => void): void => {
+      const visitorCallbackController: AbortController = new AbortController();
 
-  // TODO
-  // every(predicate: Predicate<GValue>, options: SubscribeOptions = {}): Promise<boolean> {
-  //   throw 'TODO';
-  // }
+      const signal: AbortSignal =
+        options.signal === undefined
+          ? visitorCallbackController.signal
+          : AbortSignal.any([visitorCallbackController.signal, options.signal]);
+
+      signal.throwIfAborted();
+
+      const end = (): void => {
+        signal.removeEventListener('abort', onAbort);
+      };
+
+      const onAbort = (): void => {
+        end();
+        reject(signal.reason);
+      };
+
+      signal.addEventListener('abort', onAbort);
+
+      let index: number = 0;
+
+      this.subscribe(
+        createInternalObserver<GValue>({
+          next: (value: GValue): void => {
+            try {
+              callback(value, index);
+            } catch (error: unknown) {
+              end();
+              reject(error);
+              visitorCallbackController.abort(error);
+              return;
+            }
+            index++;
+          },
+          error: (error: unknown): void => {
+            end();
+            reject(error);
+          },
+          complete: (): void => {
+            end();
+            resolve();
+          },
+        }),
+        {
+          signal,
+        },
+      );
+    });
+  }
+
+  every(predicate: Predicate<GValue>, options: SubscribeOptions = {}): Promise<boolean> {
+    return new Promise<boolean>(
+      (resolve: (value: boolean) => void, reject: (reason?: any) => void): void => {
+        const controller: AbortController = new AbortController();
+
+        const signal: AbortSignal =
+          options.signal === undefined
+            ? controller.signal
+            : AbortSignal.any([controller.signal, options.signal]);
+
+        signal.throwIfAborted();
+
+        const end = (): void => {
+          signal.removeEventListener('abort', onAbort);
+        };
+
+        const onAbort = (): void => {
+          end();
+          reject(signal.reason);
+        };
+
+        signal.addEventListener('abort', onAbort);
+
+        let index: number = 0;
+
+        this.subscribe(
+          createInternalObserver<GValue>({
+            next: (value: GValue): void => {
+              let passed: boolean;
+              try {
+                passed = predicate(value, index);
+              } catch (error: unknown) {
+                end();
+                reject(error);
+                controller.abort(error);
+                return;
+              }
+              index++;
+
+              if (!passed) {
+                end();
+                resolve(false);
+                controller.abort();
+              }
+            },
+            error: (error: unknown): void => {
+              end();
+              reject(error);
+            },
+            complete: (): void => {
+              end();
+              resolve(true);
+            },
+          }),
+          {
+            signal,
+          },
+        );
+      },
+    );
+  }
 
   first(options: SubscribeOptions = {}): Promise<GValue> {
     return new Promise<GValue>(
@@ -800,27 +1005,212 @@ export class Observable<GValue> {
     );
   }
 
-  // TODO
-  // find<GFilteredValue extends GValue>(
-  //   predicate: PredicateStrict<GValue, GFilteredValue>,
-  //   options?: SubscribeOptions,
-  // ): Promise<GFilteredValue>;
-  // find(predicate: Predicate<GValue>, options?: SubscribeOptions): Promise<GValue>;
-  // find(predicate: Predicate<GValue>, options: SubscribeOptions = {}): Promise<GValue> {
-  //   throw 'TODO';
-  // }
+  find<GFilteredValue extends GValue>(
+    predicate: PredicateStrict<GValue, GFilteredValue>,
+    options?: SubscribeOptions,
+  ): Promise<GFilteredValue | undefined>;
+  find(predicate: Predicate<GValue>, options?: SubscribeOptions): Promise<GValue | undefined>;
+  find(predicate: Predicate<GValue>, options: SubscribeOptions = {}): Promise<GValue | undefined> {
+    return new Promise<GValue | undefined>(
+      (resolve: (value: GValue | undefined) => void, reject: (reason?: any) => void): void => {
+        const controller: AbortController = new AbortController();
 
-  // TODO
-  // some(predicate: Predicate<GValue>, options: SubscribeOptions = {}): Promise<boolean> {
-  //   throw 'TODO';
-  // }
+        const signal: AbortSignal =
+          options.signal === undefined
+            ? controller.signal
+            : AbortSignal.any([controller.signal, options.signal]);
 
-  // TODO
-  // reduce<GReducedValue extends GValue>(
-  //   reducer: Reducer<GValue, GReducedValue>,
-  //   initialValue?: GReducedValue,
-  //   options: SubscribeOptions = {},
-  // ): Promise<GReducedValue> {
-  //   throw 'TODO';
-  // }
+        signal.throwIfAborted();
+
+        const end = (): void => {
+          signal.removeEventListener('abort', onAbort);
+        };
+
+        const onAbort = (): void => {
+          end();
+          reject(signal.reason);
+        };
+
+        signal.addEventListener('abort', onAbort);
+
+        let index: number = 0;
+
+        this.subscribe(
+          createInternalObserver<GValue>({
+            next: (value: GValue): void => {
+              let passed: boolean;
+              try {
+                passed = predicate(value, index);
+              } catch (error: unknown) {
+                end();
+                reject(error);
+                controller.abort(error);
+                return;
+              }
+              index++;
+
+              if (passed) {
+                end();
+                resolve(value);
+                controller.abort();
+              }
+            },
+            error: (error: unknown): void => {
+              end();
+              reject(error);
+            },
+            complete: (): void => {
+              end();
+              resolve(undefined);
+            },
+          }),
+          {
+            signal,
+          },
+        );
+      },
+    );
+  }
+
+  some(predicate: Predicate<GValue>, options: SubscribeOptions = {}): Promise<boolean> {
+    return new Promise<boolean>(
+      (resolve: (value: boolean) => void, reject: (reason?: any) => void): void => {
+        const controller: AbortController = new AbortController();
+
+        const signal: AbortSignal =
+          options.signal === undefined
+            ? controller.signal
+            : AbortSignal.any([controller.signal, options.signal]);
+
+        signal.throwIfAborted();
+
+        const end = (): void => {
+          signal.removeEventListener('abort', onAbort);
+        };
+
+        const onAbort = (): void => {
+          end();
+          reject(signal.reason);
+        };
+
+        signal.addEventListener('abort', onAbort);
+
+        let index: number = 0;
+
+        this.subscribe(
+          createInternalObserver<GValue>({
+            next: (value: GValue): void => {
+              let passed: boolean;
+              try {
+                passed = predicate(value, index);
+              } catch (error: unknown) {
+                end();
+                reject(error);
+                controller.abort(error);
+                return;
+              }
+              index++;
+
+              if (passed) {
+                end();
+                resolve(true);
+                controller.abort();
+              }
+            },
+            error: (error: unknown): void => {
+              end();
+              reject(error);
+            },
+            complete: (): void => {
+              end();
+              resolve(false);
+            },
+          }),
+          {
+            signal,
+          },
+        );
+      },
+    );
+  }
+
+  reduce(
+    reducer: Reducer<GValue, GValue>,
+    initialValue?: undefined,
+    options?: SubscribeOptions,
+  ): Promise<GValue>;
+  reduce<GReducedValue extends GValue>(
+    reducer: Reducer<GValue, GReducedValue>,
+    initialValue: GReducedValue,
+    options?: SubscribeOptions,
+  ): Promise<GReducedValue>;
+  reduce<GReducedValue extends GValue>(
+    reducer: Reducer<GValue, GReducedValue>,
+    initialValue?: GReducedValue,
+    options: SubscribeOptions = {},
+  ): Promise<GReducedValue> {
+    return new Promise<GReducedValue>(
+      (resolve: (value: GReducedValue) => void, reject: (reason?: any) => void): void => {
+        const controller: AbortController = new AbortController();
+
+        const signal: AbortSignal =
+          options.signal === undefined
+            ? controller.signal
+            : AbortSignal.any([controller.signal, options.signal]);
+
+        signal.throwIfAborted();
+
+        const end = (): void => {
+          signal.removeEventListener('abort', onAbort);
+        };
+
+        const onAbort = (): void => {
+          end();
+          reject(signal.reason);
+        };
+
+        signal.addEventListener('abort', onAbort);
+
+        let index: number = 0;
+        let accumulator: GReducedValue = initialValue as GReducedValue;
+        let accumulatorUninitialized: boolean = arguments.length <= 1;
+
+        this.subscribe(
+          createInternalObserver<GValue>({
+            next: (value: GValue): void => {
+              if (accumulatorUninitialized) {
+                accumulator = value as GReducedValue;
+                index++;
+                return;
+              }
+              try {
+                accumulator = reducer(accumulator, value, index);
+              } catch (error: unknown) {
+                end();
+                reject(error);
+                controller.abort(error);
+                return;
+              }
+              index++;
+            },
+            error: (error: unknown): void => {
+              end();
+              reject(error);
+            },
+            complete: (): void => {
+              end();
+              if (accumulatorUninitialized) {
+                reject(new TypeError('No data.'));
+              } else {
+                resolve(accumulator);
+              }
+            },
+          }),
+          {
+            signal,
+          },
+        );
+      },
+    );
+  }
 }
