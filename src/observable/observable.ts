@@ -35,6 +35,10 @@ export interface SubscriptionObserver<GValue> {
   readonly complete?: ObservableCompleteCallback;
 }
 
+export type SubscriptionObserverOrNextCallback<GValue> =
+  | SubscriptionObserver<GValue>
+  | ObservableNextCallback<GValue>;
+
 export interface SubscribeOptions {
   readonly signal?: AbortSignal;
 }
@@ -51,6 +55,10 @@ export interface ObservableInspector<GValue> {
   readonly subscribe?: VoidFunction;
   readonly abort?: ObservableInspectorAbortHandler;
 }
+
+export type ObservableInspectorOrNextCallback<GValue> =
+  | ObservableInspector<GValue>
+  | ObservableNextCallback<GValue>;
 
 export interface Predicate<GValue> {
   (value: GValue, index: number): boolean;
@@ -219,7 +227,7 @@ export class Observable<GValue> {
   }
 
   subscribe(
-    observerOrNext: ObservableNextCallback<GValue> | SubscriptionObserver<GValue> = {},
+    observerOrNext: SubscriptionObserverOrNextCallback<GValue> = {},
     options: SubscribeOptions = {},
   ): void {
     if (observableContextIsNotFullyActive()) {
@@ -607,9 +615,7 @@ export class Observable<GValue> {
     });
   }
 
-  inspect(
-    inspectorOrNext: ObservableNextCallback<GValue> | ObservableInspector<GValue>,
-  ): Observable<GValue> {
+  inspect(inspectorOrNext: ObservableInspectorOrNextCallback<GValue>): Observable<GValue> {
     let subscribe: VoidFunction | undefined;
     let next: ObservableNextCallback<GValue> | undefined;
     let error: ObservableErrorCallback | undefined;
