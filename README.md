@@ -1,15 +1,15 @@
-[![npm (scoped)](https://img.shields.io/npm/v/wigc-observable-polyfill.svg)](https://www.npmjs.com/package/wigc-observable-polyfill)
-![npm](https://img.shields.io/npm/dm/wigc-observable-polyfill.svg)
-![NPM](https://img.shields.io/npm/l/wigc-observable-polyfill.svg)
-![npm type definitions](https://img.shields.io/npm/types/wigc-observable-polyfill.svg)
+[![npm (scoped)](https://img.shields.io/npm/v/wicg-observable-polyfill.svg)](https://www.npmjs.com/package/wicg-observable-polyfill)
+![npm](https://img.shields.io/npm/dm/wicg-observable-polyfill.svg)
+![NPM](https://img.shields.io/npm/l/wicg-observable-polyfill.svg)
+![npm type definitions](https://img.shields.io/npm/types/wicg-observable-polyfill.svg)
 
-## wigc-observable-polyfill
+## wicg-observable-polyfill
 
-Implementation of the [WIGC Observable](https://wicg.github.io/observable/).
+Implementation of the [WICG Observable](https://wicg.github.io/observable/).
 
 Compliant with the `28 February 2025` spec.
 
-> NOTE: this implementation was not written by the WIGC. It is done by myself, following stricly the spec, to help everyone adopt Observables.
+> NOTE: this implementation was not written by the WICG. It is done by myself, following stricly the spec, to help everyone adopt Observables.
 
 ## 📦 Installation
 
@@ -19,27 +19,29 @@ We may use this package in two ways:
 
 In this mode, the _primitives_ (`Observable`, `Subscriber`, and `EventTarget`), are happened to `globalThis` and/or the prototype is modified.
 
+#### (recommended) local installation with esm import
+
+```shell
+yarn add wicg-observable-polyfill
+# or
+npm install wicg-observable-polyfill --save
+```
+
+```ts
+import { polyfill } from 'wicg-observable-polyfill/protected';
+
+polyfill();
+```
+
+This is the recommended way, as it allows your bundler (like esbuild) to transpile the code to any `es` version of your choice.
+
 #### using jsdelivr
 
 ```html
 <script
   type="module"
-  src="https://cdn.jsdelivr.net/npm/wigc-observable-polyfill@0.1.0/polyfill.protected.min.js"
+  src="https://cdn.jsdelivr.net/npm/wicg-observable-polyfill@0.1.0/polyfill.protected.min.js"
 ></script>
-```
-
-#### local installation with esm import
-
-```shell
-yarn add wigc-observable-polyfill
-# or
-npm install wigc-observable-polyfill --save
-```
-
-```ts
-import { polyfill } from 'wigc-observable-polyfill/protected';
-
-polyfill();
 ```
 
 ### Direct primitives consumption
@@ -47,7 +49,7 @@ polyfill();
 In this mode, we may import directly the primitives (`Observable`, `Subscriber`, and `when`) to consume them:
 
 ```ts
-import { when, Observable } from 'wigc-observable-polyfill';
+import { when, Observable } from 'wicg-observable-polyfill';
 
 when(window, 'click')
   .takeUntil(Observable.from(Promise.resolve(true)))
@@ -56,10 +58,10 @@ when(window, 'click')
 
 ## 📜 Documentation
 
-The WIGC documentation may be found here: https://wicg.github.io/observable/.
+The WICG documentation may be found here: https://wicg.github.io/observable/.
 
-- `wigc-observable-polyfill` exports: `Observable`, `Subscriber`, and `when`
-- `wigc-observable-polyfill/protected` export the function `polyfill`
+- `wicg-observable-polyfill` exports: `Observable`, `Subscriber`, and `when`
+- `wicg-observable-polyfill/protected` exports the function `polyfill`
   - when called, it exposes `Observable` and `Subscriber` into `globalThis`, and adds the `when` method to `EventTarget`
   
 
@@ -68,7 +70,7 @@ The WIGC documentation may be found here: https://wicg.github.io/observable/.
 ### Drag event
 
 ```ts
-import { when, Observable } from 'wigc-observable-polyfill';
+import { when, Observable } from 'wicg-observable-polyfill';
 
 interface Drag {
   readonly originX: number;

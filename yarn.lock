@@ -1672,20 +1672,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"observable-polyfill@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "observable-polyfill@workspace:."
-  dependencies:
-    "@types/node": "npm:^22.13.10"
-    "@vitest/coverage-istanbul": "npm:^3.0.9"
-    prettier: "npm:^3.5.3"
-    prettier-plugin-organize-imports: "npm:^4.1.0"
-    typedoc: "npm:^0.28.0"
-    typescript: "npm:5.8.2"
-    vitest: "npm:^3.0.9"
-  languageName: unknown
-  linkType: soft
-
 "p-map@npm:^7.0.2":
   version: 7.0.3
   resolution: "p-map@npm:7.0.3"
@@ -2351,6 +2337,20 @@ __metadata:
   checksum: 10c0/1cde0b01b827d2cf4cb11db962f3958b9175d5d9e7ac7361d1a7b0e2dc6069a263e69118bd974c4f6d0a890ef4eedfe34cf3d5167ec14203dbc9a18620537054
   languageName: node
   linkType: hard
+
+"wicg-observable-polyfill@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "wicg-observable-polyfill@workspace:."
+  dependencies:
+    "@types/node": "npm:^22.13.10"
+    "@vitest/coverage-istanbul": "npm:^3.0.9"
+    prettier: "npm:^3.5.3"
+    prettier-plugin-organize-imports: "npm:^4.1.0"
+    typedoc: "npm:^0.28.0"
+    typescript: "npm:5.8.2"
+    vitest: "npm:^3.0.9"
+  languageName: unknown
+  linkType: soft
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
   version: 7.0.0

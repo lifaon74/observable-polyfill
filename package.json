@@ -1,6 +1,6 @@
 {
-  "name": "wigc-observable-polyfill",
-  "version": "0.1.1",
+  "name": "wicg-observable-polyfill",
+  "version": "0.1.0",
   "type": "module",
   "main": "./index.js",
   "scripts": {
@@ -14,8 +14,12 @@
     "fb:dev": "node fabrique/actions/cli/build-and-publish.cli.js --mode dev",
     "fb:rc": "node fabrique/actions/cli/build-and-publish.cli.js --mode rc"
   },
-  "description": "Implementation of the WIGC Observable https://wicg.github.io/observable/",
-  "keywords": ["Observable", "WIGC", "polyfill"],
+  "description": "Implementation of the WICG Observable https://wicg.github.io/observable/",
+  "keywords": [
+    "Observable",
+    "WICG",
+    "polyfill"
+  ],
   "author": "Valentin Richard",
   "license": "MIT",
   "access": "public",
